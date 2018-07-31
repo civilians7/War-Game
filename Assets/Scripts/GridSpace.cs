@@ -5,7 +5,6 @@ using UnityEngine;
 public class GridSpace : MonoBehaviour {
 
     public Camera myCamera;
-    public GameObject target;
 
     private void Start() {  
     }
@@ -28,25 +27,6 @@ public class GridSpace : MonoBehaviour {
         }
     }
 
-   /* void OnMouseDrag() {
-        if (Troop.selectedTroop) {
-            Troop.selectedTroop.transform.GetChild(0).transform.position = CalculateWorldPointOfMouseClick();
-        }
-    }*/
-
-  /*  public void SetTarget() {
-        if (Troop.selectedTroop) {
-            Vector2 rawPos = Troop.selectedTroop.transform.GetChild(0).transform.position;
-            Vector2 roundedPos = SnapToGrid(rawPos);
-            float attackDist = Troop.selectedTroop.GetComponent<Troop>().attackDistance;
-
-            if (CanAttack(roundedPos, Troop.selectedTroop.transform.position, attackDist)) {
-                Troop.selectedTroop.transform.GetChild(0).transform.position = roundedPos;
-            } else {
-                Destroy(Troop.selectedTroop.transform.GetChild(0).gameObject);
-            }
-        }
-    }*/
 
     Vector2 SnapToGrid(Vector2 rawWorldPos) {
         float xPos;
@@ -77,7 +57,7 @@ public class GridSpace : MonoBehaviour {
         } else {
             yPos = Mathf.RoundToInt(rawWorldPos.y);
         }
-
+        print(xPos + "  " +  yPos);
         return new Vector2(xPos, yPos);
     }
 
@@ -88,7 +68,6 @@ public class GridSpace : MonoBehaviour {
 
         Vector3 weirdTriplet = new Vector3(xPos, yPos, distanceFromCamera);
         Vector2 worldPos = myCamera.ScreenToWorldPoint(weirdTriplet);
-
         return worldPos;
     }
 
@@ -108,8 +87,6 @@ public class GridSpace : MonoBehaviour {
         float attackDist = Troop.selectedTroop.GetComponent<Troop>().attackDistance;
         if (CanAttack(roundedPos, Troop.selectedTroop.transform.position, attackDist)) {
             Troop.selectedTroop.GetComponent<Troop>().targetPos = roundedPos;
-            GameObject crosshair = Instantiate(target, roundedPos, Quaternion.identity);
-            crosshair.transform.parent = Troop.selectedTroop.transform;
 
         }
             

@@ -61,21 +61,30 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\HexMap Tools\Examples\Scripts\Cell.cs" />
+    <Compile Include="Assets\HexMap Tools\Examples\Scripts\HexxagonController.cs" />
+    <Compile Include="Assets\HexMap Tools\Examples\Scripts\PathFindingDemo.cs" />
+    <Compile Include="Assets\HexMap Tools\Scripts\HexCalculator.cs" />
+    <Compile Include="Assets\HexMap Tools\Scripts\HexContainer.cs" />
+    <Compile Include="Assets\HexMap Tools\Scripts\HexCoordinates.cs" />
+    <Compile Include="Assets\HexMap Tools\Scripts\HexGrid.cs" />
+    <Compile Include="Assets\HexMap Tools\Scripts\HexGridEditor.cs" />
+    <Compile Include="Assets\HexMap Tools\Scripts\HexPathFinder.cs" />
+    <Compile Include="Assets\HexMap Tools\Scripts\HexScale.cs" />
+    <Compile Include="Assets\HexMap Tools\Scripts\HexUtility.cs" />
+    <Compile Include="Assets\HexMap Tools\Scripts\PriorityQueue\PriorityQueue.cs" />
     <Compile Include="Assets\Scripts\Attack.cs" />
-    <Compile Include="Assets\Scripts\CameraControl.cs" />
-    <Compile Include="Assets\Scripts\FadeIn.cs" />
+    <Compile Include="Assets\Scripts\GameManager.cs" />
     <Compile Include="Assets\Scripts\GridSpace.cs" />
-    <Compile Include="Assets\Scripts\LevelManager.cs" />
-    <Compile Include="Assets\Scripts\MusicManager.cs" />
-    <Compile Include="Assets\Scripts\OptionsController.cs" />
-    <Compile Include="Assets\Scripts\PlayerOneTroop.cs" />
-    <Compile Include="Assets\Scripts\PlayerPrefsManager.cs" />
-    <Compile Include="Assets\Scripts\PlayerTwoTroop.cs" />
-    <Compile Include="Assets\Scripts\SetStartVolume.cs" />
-    <Compile Include="Assets\Scripts\Target.cs" />
+    <Compile Include="Assets\Scripts\Not in use\CameraControl.cs" />
+    <Compile Include="Assets\Scripts\Not in use\FadeIn.cs" />
+    <Compile Include="Assets\Scripts\Not in use\LevelManager.cs" />
+    <Compile Include="Assets\Scripts\Not in use\MusicManager.cs" />
+    <Compile Include="Assets\Scripts\Not in use\OptionsController.cs" />
+    <Compile Include="Assets\Scripts\Not in use\PlayerPrefsManager.cs" />
+    <Compile Include="Assets\Scripts\Not in use\SetStartVolume.cs" />
     <Compile Include="Assets\Scripts\Troop.cs" />
     <Compile Include="Assets\Scripts\TurnDisplay.cs" />
-    <Compile Include="Assets\Scripts\TurnManager.cs" />
     <Reference Include="UnityEditor.StandardEvents">
       <HintPath>C:/Users/cdica/OneDrive/Documents/repos/Unity/War Game/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>
     </Reference>
