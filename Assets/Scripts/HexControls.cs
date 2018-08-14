@@ -275,12 +275,43 @@ namespace HexMapToolsExamples
             return cost;
         }
 
-        public void moveTroop(Troop troop) {
+        public void MoveTroop(Troop troop) {
             HexCoordinates troopPos = hexCalculator.HexFromPosition(troop.newPos);
+            Vector3 direction = troop.transform.position;
             troop.GetComponentInParent<Cell>().Color = CellColor.White;
+            for (int i = 0; i < troop.animationPath.Count; i++) {
+                Vector3 vecPos = hexCalculator.HexToPosition(troop.animationPath[i]);
+                direction = vecPos - direction;
+                direction *= Time.deltaTime;
+                
+                //troop.direction = direction;
+            }
+            troop.transform.SetParent(cells[troopPos].transform);
+            troop.GetComponentInParent<Cell>().Color = troop.color;
+            //SetTroopParent(troop);
+        }
+
+        public void SetTroopParent(Troop troop) {
+            troop.direction = new Vector3(0,0,0);
+            HexCoordinates troopPos = hexCalculator.HexFromPosition(troop.newPos);
             troop.transform.SetParent(cells[troopPos].transform);
             troop.GetComponentInParent<Cell>().Color = troop.color;
         }
+
+        public List<HexCoordinates> FindPath(Vector3 pos1, Vector3 pos2) {
+            HexPathFinder pathFinder = new HexPathFinder(HexCost);
+            List<HexCoordinates> path;
+
+            HexCoordinates startPos = hexCalculator.HexFromPosition(pos1);
+            HexCoordinates endPos = hexCalculator.HexFromPosition(pos2);
+            pathFinder.FindPath(startPos, endPos, out path);
+            return path;
+        }
+
+
+
+
+
     }
 
 }

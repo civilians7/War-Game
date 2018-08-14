@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using HexMapToolsExamples;
+using HexMapTools;
 
 public class Troop : MonoBehaviour {
 
@@ -11,22 +12,44 @@ public class Troop : MonoBehaviour {
     public float attackDistance;
     public Vector3 currentPos;
     public Vector3 newPos;
-    public Vector3 targetPos;
     public CellColor color;
+    public Vector3 direction;
+
+    public List<HexCoordinates> animationPath;
 
     public List<Troop> assistedTroops = new List<Troop>();
     public Troop assistingTroop;
-
+    
+    private HexControls hexControls;
+    private GameManager gameManager;
+    public bool firstPass = true;
+    private bool moving = true;
     // Use this for initialization
     void Start() {
-        currentPos = gameObject.transform.position;
+        currentPos = transform.position;
         newPos = currentPos;
         assistedTroops.Add(this);
         color = GetComponentInParent<Cell>().Color;
+        hexControls = FindObjectOfType<HexControls>();
+        gameManager = FindObjectOfType<GameManager>();
 
     }
     void Update() {
-        //currentPos = transform.position;
+        //if (gameManager.turnNum == 0) {
+        //    float newPosPoint = (newPos.x * direction.x);
+        //    float transformPoint = (transform.position.x * direction.x);
+            
+        //    if (firstPass) {
+        //        moving = newPosPoint > transformPoint;
+        //        firstPass = false;
+        //    }
+            
+        //    if (direction != new Vector3(0,0,0) && moving == (newPosPoint > transformPoint)) {
+        //        transform.Translate(direction);
+        //    } else {
+        //        hexControls.SetTroopParent(this);
+        //    }
+        //}
     }
 
     public void Engage(Troop troop) {
@@ -36,8 +59,9 @@ public class Troop : MonoBehaviour {
     }
 
     void AssistedBy(Troop ally) {
+
         foreach (Troop troop in assistedTroops) {
-            if (ally == troop) {
+            if (ally == troop || ally.assistingTroop != null) {
                 return;
             }
         }
@@ -48,17 +72,26 @@ public class Troop : MonoBehaviour {
         }
         ally.assistingTroop = this;
         assistedTroops.Add(ally);
+
+        GetComponent<LineRenderer>().SetPosition(0, transform.position);
+        GetComponent<LineRenderer>().SetPosition(1, ally.transform.position);
         
         actionPower += ally.basePower;
     }
 
     public void Move() {
+        GetComponent<LineRenderer>().SetPosition(0, new Vector3(0, 0, 0));
+        GetComponent<LineRenderer>().SetPosition(1, new Vector3(0, 0, 0));
+        foreach (Troop troop in assistedTroops) {
+            troop.GetComponent<LineRenderer>().SetPosition(0, new Vector3(0, 0, 0));
+            troop.GetComponent<LineRenderer>().SetPosition(1, new Vector3(0, 0, 0));
+        }
         actionPower = basePower;
         assistedTroops.Clear();
         if (assistingTroop != null) {
             assistingTroop.assistedTroops.Remove(this);
         }
-        
+
     }
 }
 
