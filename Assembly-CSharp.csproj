@@ -61,7 +61,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\HexMap Tools\Examples\Scripts\Cell.cs" />
     <Compile Include="Assets\HexMap Tools\Examples\Scripts\HexxagonController.cs" />
     <Compile Include="Assets\HexMap Tools\Examples\Scripts\PathFindingDemo.cs" />
     <Compile Include="Assets\HexMap Tools\Scripts\HexCalculator.cs" />
@@ -73,9 +72,9 @@
     <Compile Include="Assets\HexMap Tools\Scripts\HexScale.cs" />
     <Compile Include="Assets\HexMap Tools\Scripts\HexUtility.cs" />
     <Compile Include="Assets\HexMap Tools\Scripts\PriorityQueue\PriorityQueue.cs" />
-    <Compile Include="Assets\Scripts\Attack.cs" />
+    <Compile Include="Assets\Scripts\Cell.cs" />
     <Compile Include="Assets\Scripts\GameManager.cs" />
-    <Compile Include="Assets\Scripts\GridSpace.cs" />
+    <Compile Include="Assets\Scripts\HexControls.cs" />
     <Compile Include="Assets\Scripts\Not in use\CameraControl.cs" />
     <Compile Include="Assets\Scripts\Not in use\FadeIn.cs" />
     <Compile Include="Assets\Scripts\Not in use\LevelManager.cs" />
@@ -83,6 +82,7 @@
     <Compile Include="Assets\Scripts\Not in use\OptionsController.cs" />
     <Compile Include="Assets\Scripts\Not in use\PlayerPrefsManager.cs" />
     <Compile Include="Assets\Scripts\Not in use\SetStartVolume.cs" />
+    <Compile Include="Assets\Scripts\PathFinder.cs" />
     <Compile Include="Assets\Scripts\Troop.cs" />
     <Compile Include="Assets\Scripts\TurnDisplay.cs" />
     <Reference Include="UnityEditor.StandardEvents">

@@ -56,7 +56,6 @@ namespace HexMapToolsExamples
             }
         }
 
-
         public HexCoordinates Coords
         {
             get;
