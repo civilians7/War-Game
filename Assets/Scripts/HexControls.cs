@@ -4,30 +4,29 @@ using UnityEngine;
 using UnityEngine.UI;
 using HexMapTools;
 
+//priority is dealing with the hexes and movement of troops
 
-
-namespace HexMapToolsExamples
+namespace HexMapTerrain
 {
-
-    
 
 
     [RequireComponent(typeof(HexGrid))]
     public class HexControls : MonoBehaviour {
 
         public Animator cameraAnimator;
-
+        public bool planningMode;
 
         private HexCalculator hexCalculator;
+        private PathFinder pathFinder;
         private HexContainer<Cell> cells;
+        
 
         private HexCoordinates selectedCoords;
         private List<HexCoordinates> possibleMoves;
-        private List<Cell> blueCells;
-        private List<Cell> redCells;
+
         private CellColor player;
-        private bool isGameOver = false;
-        private Troop[] troopArray;
+        private GameManager gameManager;
+        private Troop selectedTroop;
 
 
         private void Start()
@@ -35,43 +34,21 @@ namespace HexMapToolsExamples
             HexGrid hexGrid = GetComponent<HexGrid>();
 
             hexCalculator = hexGrid.HexCalculator;
+            pathFinder = FindObjectOfType<PathFinder>();
+            gameManager = FindObjectOfType<GameManager>();
             possibleMoves = new List<HexCoordinates>();
-            blueCells = new List<Cell>();
-            redCells = new List<Cell>();
-            troopArray = FindObjectsOfType<Troop>();
-            //player = CellColor.Blue;
-            //cameraAnimator.SetInteger("Player", (int)player);
-
 
             cells = new HexContainer<Cell>(hexGrid);
             cells.FillWithChildren();
 
-            
-            //Count score
-            foreach(var pair in cells)
-            {
-                Cell cell = pair.Value;
-
-                cell.Init(pair.Key);
-
-                if (cell.Color == CellColor.Blue)
-                {
-                    blueCells.Add(cell);
-                }
-                else if (cell.Color == CellColor.Red)
-                {
-                    redCells.Add(cell);
-                }
-            }
-
-
+           // SetUpMap();
         }
+
+
 
         private void Update()
         {
-             troopArray = FindObjectsOfType<Troop>();
-            if (isGameOver)
-                return;
+             
 
 
             if(Input.GetKeyDown(KeyCode.Mouse0))
@@ -79,89 +56,77 @@ namespace HexMapToolsExamples
                 Vector3 mouse = Camera.main.ScreenToWorldPoint(Input.mousePosition);
                 HexCoordinates mouseCoords = hexCalculator.HexFromPosition(mouse);
 
-
                 if (player == CellColor.White)
                     return;
 
                 //Move or select cell
-                if(possibleMoves.Contains(mouseCoords))
+                if (possibleMoves.Contains(mouseCoords) && selectedTroop && mouseCoords != hexCalculator.HexFromPosition(selectedTroop.transform.position))
                 {
                     Move(mouseCoords);
-                    CheckWin();
                     
                 }
-                else
-                {
-                    SelectCell(mouseCoords);
-                }
+
 
             }
         }
 
+        public void SelectTroop(Troop troop) {
+            Vector3 cellPos = troop.GetComponentInParent<Cell>().transform.position;
+            HexCoordinates cellCoords = hexCalculator.HexFromPosition(cellPos);
+            if (player == CellColor.White)
+                return;
+
+            //Move or select cell
+            if (!selectedTroop) {
+                SelectCell(cellCoords);
+            }
+            
+
+
+        }
+
         private void Move(HexCoordinates coords) {
+            Troop thisTroop = cells[selectedCoords].GetComponentInChildren<Troop>();
+            if (thisTroop.attackingTroop) {
+                thisTroop.attackingTroop.attackedByTroop = null;
+                thisTroop.attackingTroop = null;
+            }
+            foreach (Troop troop in gameManager.troopArray) {
 
-            foreach (Troop troop in troopArray) {
-
-                if (cells[coords].transform.position == troop.transform.position && troop.GetComponentInParent<Cell>().Color == player) {
-                    troop.Engage(cells[selectedCoords].GetComponentInChildren<Troop>());
+                if (cells[coords].transform.position == troop.transform.position && troop.color == thisTroop.color) {
+                    troop.Support(thisTroop);
                     DeselectCell();
                     return;
+                } else if (cells[coords].transform.position == troop.transform.position && troop.color != thisTroop.color) {
+                    if (!troop.attackedByTroop) {
+                        troop.attackedByTroop = thisTroop;
+                        thisTroop.attackingTroop = troop;
+                    }
+                    
                 }
             }
-            cells[selectedCoords].GetComponentInChildren<Troop>().Move();
-            cells[selectedCoords].GetComponentInChildren<Troop>().transform.position = cells[coords].transform.position;
+
+            thisTroop.Move();
+            thisTroop.transform.position = cells[coords].transform.position;
+           
             DeselectCell();
 
         }
 
-        private void CheckWin()
+        public void HandleWin() //Call from GameManager when game is over
         {
-
-            //Check if next player can move
-            List<Cell> playerCells = null;
-
-            if (player == CellColor.Blue)
-                playerCells = redCells;
-            else
-                playerCells = blueCells;
-
-
-            //if can move - return
-            foreach(Cell cell in playerCells)
-            {
-                var moves = GetPossibleMoves(cell.Coords, GetComponentInChildren<Troop>().movement);
-
-                if (moves.Count > 0)
-                    return;
-            }
-
-            //else - game over, check and show who wins
-            isGameOver = true;
 
 
             CellColor winner = CellColor.White;
-            if (blueCells.Count > redCells.Count)
-            {
-                winner = CellColor.Blue;
-            }
-            else if (redCells.Count > blueCells.Count)
-            {
-                winner = CellColor.Red;
-            }
-            else //Draw
-            {
-                winner = CellColor.White;
-            }
 
 
             cameraAnimator.SetInteger("Player", (int)winner);
             
-
         }
 
 
         //Change the player and the background
-        public void ChangePlayer(CellColor color)
+        public void ChangePlayer(CellColor color)  
         {
 
             player = color;
@@ -180,25 +145,16 @@ namespace HexMapToolsExamples
                     return;
 
 
-                if (cell.Color == CellColor.Blue)
-                    blueCells.Remove(cell);
-                else if (cell.Color == CellColor.Red)
-                    redCells.Remove(cell);
-
-
                 cell.Color = state;
 
-                if (state == CellColor.Blue)
-                    blueCells.Add(cell);
-                if (state == CellColor.Red)
-                    redCells.Add(cell);
+         
             }
         }
 
 
         List<HexCoordinates> GetPossibleMoves(HexCoordinates coords, int movement)
         {
-            HexPathFinder pathFinder = new HexPathFinder(HexCost);
+            HexPathFinder pathing = new HexPathFinder(HexCost);
             List<HexCoordinates> path;
             List<HexCoordinates> moves = new List<HexCoordinates>();
 
@@ -210,8 +166,8 @@ namespace HexMapToolsExamples
                 
                 if (cell != null)
                 {
-                    pathFinder.FindPath(coords, c, out path);
-                    if (!(CalculatePathCost(path) > cells[coords].GetComponentInChildren<Troop>().movement - 1)) {
+                    pathing.FindPath(coords, c, out path);
+                    if (!(pathFinder.CalculatePathCost(path) > cells[coords].GetComponentInChildren<Troop>().movement - 1)) {
                         moves.Add(c);
                     }
                 }
@@ -229,6 +185,7 @@ namespace HexMapToolsExamples
                 cells[move].IsHighlighted = false; 
             }
             possibleMoves.Clear();
+            selectedTroop = null;
         }
 
         //Select cell and highlight possible moves
@@ -237,80 +194,128 @@ namespace HexMapToolsExamples
             DeselectCell();
 
             Cell cell = cells[coords];
-
+            
             //if active player isn't owner, return
             if (cell == null || cell.Color != player)
                 return;
 
 
             selectedCoords = coords;
-
+            selectedTroop = cells[selectedCoords].GetComponentInChildren<Troop>();
             possibleMoves = GetPossibleMoves(coords, cells[selectedCoords].GetComponentInChildren<Troop>().movement);
+            if (planningMode == true) {
+                
+                Troop troop = cell.GetComponentInChildren<Troop>();
+                troop.GetComponent<LineRenderer>().SetPosition(0, new Vector3(0, 0, 0));
+                troop.GetComponent<LineRenderer>().SetPosition(1, new Vector3(0, 0, 0));
 
+                if (troop.supportingTroop) {
+                    troop.supportingTroop.supportedByTroops.Remove(troop);
+                    troop.supportingTroop.actionPower = troop.supportingTroop.basePower;
+                    troop.supportingTroop = null;
+                }
+            }
             //Highlight all possible moves
             foreach(HexCoordinates move in possibleMoves)
             {
                 cells[move].IsHighlighted = true;
             }
+
         }
 
-        float HexCost(HexCoordinates a, HexCoordinates b) {
+        public void SetUpMap() {
+            foreach (Troop troop in gameManager.troopArray) {
+                HexCoordinates troopPos = hexCalculator.HexFromPosition(troop.transform.position);
+                troop.transform.SetParent(cells[troopPos].transform);
+                troop.GetComponentInParent<Cell>().Color = troop.color;
+            }
+        }
+
+        public void TroopMoved(Troop troop) {
+            HexCoordinates troopPos = hexCalculator.HexFromPosition(troop.newPos);
+            troop.transform.SetParent(cells[troopPos].transform);
+            troop.GetComponentInParent<Cell>().Color = troop.color;
+
+        }
+
+        
+        public float HexCost(HexCoordinates a, HexCoordinates b) { 
 
             Cell cell = cells[b];
 
-            foreach (Troop troop in troopArray)
+            foreach (Troop troop in gameManager.troopArray)
                 if ((cell == null || cell.transform.position == troop.transform.position))
-                    return float.PositiveInfinity;                
-            
+                    return float.PositiveInfinity;
+
             return 1;
         }
 
-        float CalculatePathCost(List<HexCoordinates> path) {
-            float cost = 0;
-
-            for (int i = 1; i < path.Count; ++i) {
-                cost += HexCost(path[i - 1], path[i]);
-            }
-
-            return cost;
-        }
-
-        public void MoveTroop(Troop troop) {
-            HexCoordinates troopPos = hexCalculator.HexFromPosition(troop.newPos);
-            Vector3 direction = troop.transform.position;
-            troop.GetComponentInParent<Cell>().Color = CellColor.White;
-            for (int i = 0; i < troop.animationPath.Count; i++) {
-                Vector3 vecPos = hexCalculator.HexToPosition(troop.animationPath[i]);
-                direction = vecPos - direction;
-                direction *= Time.deltaTime;
+        public void ActionTurn() {
+            foreach (Troop thisTroop in gameManager.troopArray) {
+                HexCoordinates targetCell = hexCalculator.HexFromPosition(thisTroop.newPos);
+                thisTroop.GetComponentInParent<Cell>().Color = CellColor.White;
+                if (thisTroop.attackedByTroop) {
+                }
+                if (thisTroop.attackedByTroop && thisTroop.actionPower < thisTroop.attackedByTroop.actionPower) { //Unit is defeated
+                    UnitRetreat(hexCalculator.HexFromPosition(thisTroop.currentPos));
+                }
                 
-                //troop.direction = direction;
+                
+
             }
-            troop.transform.SetParent(cells[troopPos].transform);
-            troop.GetComponentInParent<Cell>().Color = troop.color;
-            //SetTroopParent(troop);
+            foreach (Troop thisTroop in gameManager.troopArray) {
+                HexCoordinates targetCell = hexCalculator.HexFromPosition(thisTroop.newPos);
+                thisTroop.animationPath = pathFinder.FindPath(thisTroop.currentPos, thisTroop.newPos);
+
+                if (cells[targetCell].GetComponentInChildren<Troop>() && cells[targetCell].GetComponentInChildren<Troop>().color != thisTroop.color && thisTroop.actionPower > thisTroop.attackingTroop.actionPower) {
+                    thisTroop.animationPath.Add(targetCell);
+                }
+
+                thisTroop.ActionMove();
+                thisTroop.actionPower = thisTroop.basePower;
+                thisTroop.supportingTroop = null;
+                thisTroop.attackedByTroop = null;
+                thisTroop.supportedByTroops.Clear();
+                thisTroop.currentPos = thisTroop.newPos;
+            }
         }
 
-        public void SetTroopParent(Troop troop) {
-            troop.direction = new Vector3(0,0,0);
-            HexCoordinates troopPos = hexCalculator.HexFromPosition(troop.newPos);
-            troop.transform.SetParent(cells[troopPos].transform);
-            troop.GetComponentInParent<Cell>().Color = troop.color;
+        void UnitRetreat(HexCoordinates coords) {
+            print("retreat");
+            Troop troop = cells[coords].GetComponentInChildren<Troop>();
+            var newCoords = HexUtility.GetInRange(coords, 1);
+            Dictionary<int, Vector3> retreatPos = new Dictionary<int, Vector3>();
+            print("coords: " + coords);
+            foreach (var c in newCoords) {
+                
+                if ((!cells[c].GetComponentInChildren<Troop>()) && troop.color == CellColor.Blue && c.Y == coords.Y && c.X < coords.X) {
+                    retreatPos.Add(1, hexCalculator.HexToPosition(c));
+                } else if ((!cells[c].GetComponentInChildren<Troop>()) && troop.color == CellColor.Red && c.Y == coords.Y && c.X > coords.X) {
+                    retreatPos.Add(2, hexCalculator.HexToPosition(c));
+                } else if ((!cells[c].GetComponentInChildren<Troop>()) && troop.color == CellColor.Blue && c.X < coords.X) {
+                    retreatPos.Add(3, hexCalculator.HexToPosition(c));
+                } else if ((!cells[c].GetComponentInChildren<Troop>()) && troop.color == CellColor.Red && c.X > coords.X) {
+                    retreatPos.Add(4, hexCalculator.HexToPosition(c));
+                } else if (!cells[c].GetComponentInChildren<Troop>()) {
+                    retreatPos.Add(5, hexCalculator.HexToPosition(c));
+                } 
+               
+            }
+            if (retreatPos.ContainsKey(1)) {
+                troop.newPos = retreatPos[1];
+            } else if (retreatPos.ContainsKey(2)) {
+                troop.newPos = retreatPos[2];
+            } else if (retreatPos.ContainsKey(3)) {
+                troop.newPos = retreatPos[3];
+            } else if (retreatPos.ContainsKey(4)) {
+                troop.newPos = retreatPos[4];
+            } else if (retreatPos.ContainsKey(5)) {
+                troop.newPos = retreatPos[5];
+            } else {
+                troop.DestroyTroop();
+            }
+
         }
-
-        public List<HexCoordinates> FindPath(Vector3 pos1, Vector3 pos2) {
-            HexPathFinder pathFinder = new HexPathFinder(HexCost);
-            List<HexCoordinates> path;
-
-            HexCoordinates startPos = hexCalculator.HexFromPosition(pos1);
-            HexCoordinates endPos = hexCalculator.HexFromPosition(pos2);
-            pathFinder.FindPath(startPos, endPos, out path);
-            return path;
-        }
-
-
-
-
 
     }
 
