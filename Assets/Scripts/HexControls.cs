@@ -269,6 +269,8 @@ namespace HexMapTerrain
 
                 if (cells[targetCell].GetComponentInChildren<Troop>() && cells[targetCell].GetComponentInChildren<Troop>().color != thisTroop.color && thisTroop.actionPower > thisTroop.attackingTroop.actionPower) {
                     thisTroop.animationPath.Add(targetCell);
+                } else if (cells[targetCell].GetComponentInChildren<Troop>() && cells[targetCell].GetComponentInChildren<Troop>().color != thisTroop.color && thisTroop.actionPower == thisTroop.attackingTroop.actionPower) {
+                    thisTroop.newPos = thisTroop.currentPos;
                 }
 
                 thisTroop.ActionMove();
