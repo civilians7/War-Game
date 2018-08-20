@@ -4,6 +4,8 @@ using UnityEngine;
 using HexMapTerrain;
 using HexMapTools;
 
+public enum CellColor { White = 0, Blue, Red, Purple, Orange, Yellow, Brown, Green }
+
 public class Troop : MonoBehaviour {
 
     public int movement; //keep public
@@ -13,7 +15,7 @@ public class Troop : MonoBehaviour {
 
     public Vector3 currentPos;
     public Vector3 newPos;
-    public CellColor color;
+    public CellColor color = CellColor.Blue;
     public Vector3 direction = new Vector3(0,0,0);
 
     public List<HexCoordinates> animationPath;
@@ -23,6 +25,8 @@ public class Troop : MonoBehaviour {
 
     public Troop attackedByTroop;
     public Troop attackingTroop;
+
+    public HexCoordinates coords;
 
     private HexControls hexControls;
     private GameManager gameManager;
@@ -41,13 +45,13 @@ public class Troop : MonoBehaviour {
         currentPos = transform.position;
         newPos = currentPos;
         supportedByTroops.Add(this);
-        color = GetComponentInParent<Cell>().Color;
         hexControls = FindObjectOfType<HexControls>();
         gameManager = FindObjectOfType<GameManager>();
         hexCalculator = hexGrid.HexCalculator;
 
     }
     void Update() {
+        coords = hexCalculator.HexFromPosition(transform.position);
         if (animationPath.Count > 0 && gameManager.turnNum == 0) {
             transformPoint = (transform.position.x * direction.x);
             transform.Translate(direction);
@@ -83,9 +87,15 @@ public class Troop : MonoBehaviour {
     }
 
     public void Support(Troop troop) {
-        if (troop.GetComponentInParent<Cell>().Color == this.GetComponentInParent<Cell>().Color) {
-            SupportedBy(troop);
-        } 
+        HexCoordinates[] neighbors = HexUtility.GetNeighbours(coords);
+        if (troop.color != color) { return; }
+        foreach (HexCoordinates neighbor in neighbors) {
+            if (neighbor == troop.coords) {
+                SupportedBy(troop);
+                return;
+            }
+        }
+        
     }
 
     void SupportedBy(Troop ally) {
@@ -122,12 +132,16 @@ public class Troop : MonoBehaviour {
     }
 
     public void DestroyTroop() {
-        GetComponentInParent<Cell>().Color = CellColor.White;
+        //GetComponentInParent<Cell>().Color = CellColor.White;
         Destroy(gameObject);
     }
 
     void OnMouseDown() {
-        hexControls.SelectTroop(this);
+        if (hexControls.selectedTroop == this) {
+            hexControls.DeselectCell();
+        } else {
+            hexControls.SelectTroop(this);
+        }
     }
 
 }

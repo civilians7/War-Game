@@ -26,7 +26,7 @@ namespace HexMapTerrain
 
         private CellColor player;
         private GameManager gameManager;
-        private Troop selectedTroop;
+        public Troop selectedTroop;
 
 
         private void Start()
@@ -136,22 +136,6 @@ namespace HexMapTerrain
         }
 
 
-        //Change cell state and count points
-        private void ChangeCellState(Cell cell, CellColor state)
-        {
-            if(cell != null)
-            {
-                if (cell.Color == state)
-                    return;
-
-
-                cell.Color = state;
-
-         
-            }
-        }
-
-
         List<HexCoordinates> GetPossibleMoves(HexCoordinates coords, int movement)
         {
             HexPathFinder pathing = new HexPathFinder(HexCost);
@@ -178,7 +162,7 @@ namespace HexMapTerrain
         }
 
         //Turn off all highlighted cells
-        private void DeselectCell()
+        public void DeselectCell()
         {
             foreach (var move in possibleMoves)
             {
@@ -194,11 +178,9 @@ namespace HexMapTerrain
             DeselectCell();
 
             Cell cell = cells[coords];
-            
             //if active player isn't owner, return
-            if (cell == null || cell.Color != player)
+            if (cell == null || !(cell.GetComponentInChildren<Troop>()) || cell.GetComponentInChildren<Troop>().color != player)
                 return;
-
 
             selectedCoords = coords;
             selectedTroop = cells[selectedCoords].GetComponentInChildren<Troop>();
@@ -223,18 +205,16 @@ namespace HexMapTerrain
 
         }
 
-        public void SetUpMap() {
+        public void SetUpMap() { //add snap functionality to troops
             foreach (Troop troop in gameManager.troopArray) {
                 HexCoordinates troopPos = hexCalculator.HexFromPosition(troop.transform.position);
                 troop.transform.SetParent(cells[troopPos].transform);
-                troop.GetComponentInParent<Cell>().Color = troop.color;
             }
         }
 
         public void TroopMoved(Troop troop) {
             HexCoordinates troopPos = hexCalculator.HexFromPosition(troop.newPos);
             troop.transform.SetParent(cells[troopPos].transform);
-            troop.GetComponentInParent<Cell>().Color = troop.color;
 
         }
 
@@ -253,7 +233,6 @@ namespace HexMapTerrain
         public void ActionTurn() {
             foreach (Troop thisTroop in gameManager.troopArray) {
                 HexCoordinates targetCell = hexCalculator.HexFromPosition(thisTroop.newPos);
-                thisTroop.GetComponentInParent<Cell>().Color = CellColor.White;
                 if (thisTroop.attackedByTroop) {
                 }
                 if (thisTroop.attackedByTroop && thisTroop.actionPower < thisTroop.attackedByTroop.actionPower) { //Unit is defeated
@@ -269,8 +248,12 @@ namespace HexMapTerrain
 
                 if (cells[targetCell].GetComponentInChildren<Troop>() && cells[targetCell].GetComponentInChildren<Troop>().color != thisTroop.color && thisTroop.actionPower > thisTroop.attackingTroop.actionPower) {
                     thisTroop.animationPath.Add(targetCell);
-                } else if (cells[targetCell].GetComponentInChildren<Troop>() && cells[targetCell].GetComponentInChildren<Troop>().color != thisTroop.color && thisTroop.actionPower == thisTroop.attackingTroop.actionPower) {
+                } else if (cells[targetCell].GetComponentInChildren<Troop>() && cells[targetCell].GetComponentInChildren<Troop>().color != thisTroop.color && thisTroop.actionPower == thisTroop.attackingTroop.actionPower && cells[targetCell].GetComponentInChildren<Troop>().newPos == thisTroop.newPos) {
                     thisTroop.newPos = thisTroop.currentPos;
+                } else if (cells[targetCell].GetComponentInChildren<Troop>() && cells[targetCell].GetComponentInChildren<Troop>().color == thisTroop.color && cells[targetCell].GetComponentInChildren<Troop>().newPos != thisTroop.newPos) {
+                    thisTroop.animationPath.Add(targetCell);
+                } else if (cells[targetCell].GetComponentInChildren<Troop>() && cells[targetCell].GetComponentInChildren<Troop>().color != thisTroop.color && thisTroop.actionPower == thisTroop.attackingTroop.actionPower && cells[targetCell].GetComponentInChildren<Troop>().newPos != thisTroop.newPos) {
+                    thisTroop.animationPath.Add(targetCell);
                 }
 
                 thisTroop.ActionMove();
@@ -301,6 +284,8 @@ namespace HexMapTerrain
                 } else if (!cells[c].GetComponentInChildren<Troop>()) {
                     retreatPos.Add(5, hexCalculator.HexToPosition(c));
                 } 
+
+
                
             }
             if (retreatPos.ContainsKey(1)) {
