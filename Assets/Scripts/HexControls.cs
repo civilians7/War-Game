@@ -217,24 +217,7 @@ namespace HexMapTerrain
             return 1;
         }
 
-        public void ActionTurn() {
-
-            print("ActionTurn begin");
-            List<Cell> conflictCells = FindConflicts();
-            print("conflicts found");
-            CutSupport(conflictCells);
-            print("support cut");
-            foreach (Troop troop in gameManager.troopArray) {
-                troop.ResolveConflicts();
-            }
-            print("conflicts resolved");
-            HandleAction();
-            print("actions handled");
-        }
-
-
-
-        List<Cell> FindConflicts() {
+        public void FindConflicts() { //Keep here since it returns Cells
             FindTroopPaths();
             List<Cell> conflictCells = new List<Cell>();
             foreach (Troop thisTroop in gameManager.troopArray) {
@@ -264,10 +247,9 @@ namespace HexMapTerrain
                     }
                 }
             }
-            return conflictCells;
         }
 
-        private void FindTroopPaths() {
+        private void FindTroopPaths() { // Keep here because it deals with Cell Pathfinding
             
             foreach (Troop thisTroop in gameManager.troopArray) {
                 thisTroop.animationPath.Clear();
@@ -279,103 +261,8 @@ namespace HexMapTerrain
             }
         }
 
-        void CutSupport(List<Cell> conflictCell) {
-            foreach (Cell cell in conflictCell) {
-                foreach (Troop troop in cell.conflictingTroops) {
-                    if (troop.supportingTroop) {
-                        troop.supportingTroop.supportedByTroops.Remove(troop);
-                        troop.supportingTroop.actionPower -= troop.basePower;
-                        troop.supportingTroop = null;
-                    }
-                }
-            }
-        }
-        void ResolveConflicts(List<Cell> conflictCell) {
-            print("resolving conflicts of count: " + conflictCell.Count);
-            foreach (Troop troop in gameManager.troopArray) {
-                if (troop.conflictingCells.Count > 1) {
-                    print("multiple conflicts");
-                    foreach (Cell cell in troop.conflictingCells) {
-                        HexCoordinates coords = hexCalculator.HexFromPosition(cell.transform.position);
-                        int troopIndex = cell.conflictingTroops.IndexOf(troop);
-                        int otherTroopIndex = 1 - troopIndex;
-                        if (troop.currentPos != cell.transform.position && (cell.conflictingTroops[troopIndex].actionPower == cell.conflictingTroops[otherTroopIndex].actionPower || cell.conflictingTroops[troopIndex].actionPower < cell.conflictingTroops[otherTroopIndex].actionPower)) {
-                            print("troop not greater than");
-                            if (cell.conflictingTroops[troopIndex].animationPath.Count > 1 && cell.conflictingTroops[troopIndex].animationPath.IndexOf(coords) > 0)
-                                cell.conflictingTroops[troopIndex].animationPath.RemoveRange(cell.conflictingTroops[troopIndex].animationPath.IndexOf(coords), cell.conflictingTroops[troopIndex].animationPath.Count - cell.conflictingTroops[troopIndex].animationPath.IndexOf(coords));
 
-                           // troop.newPos = hexCalculator.HexToPosition(troop.animationPath[troop.animationPath.Count - 1]);
-                            conflictCell.Remove(cell);
-                        }
-                    }
-                }
-                troop.conflictingCells.Clear();
-            }
-            conflictCell.Clear();
-            conflictCell = FindConflicts();
-
-
-            foreach (Cell cell in conflictCell) {
-                HexCoordinates coords = hexCalculator.HexFromPosition(cell.transform.position);
-                print(cell.conflictingTroops[0].animationPath.Count);
-                print(cell.conflictingTroops[1].animationPath.Count);
-
-                if (cell.conflictingTroops[0].color != cell.conflictingTroops[1].color) {
-
-                    if (cell.conflictingTroops[0].actionPower == cell.conflictingTroops[1].actionPower) {
-
-                        if (cell.conflictingTroops[0].animationPath.Count > 1 && cell.conflictingTroops[0].animationPath.IndexOf(coords) > 0)
-                            cell.conflictingTroops[0].animationPath.RemoveRange(cell.conflictingTroops[0].animationPath.IndexOf(coords), cell.conflictingTroops[0].animationPath.Count - cell.conflictingTroops[0].animationPath.IndexOf(coords));
-
-                        if (cell.conflictingTroops[1].animationPath.Count > 1 && cell.conflictingTroops[1].animationPath.IndexOf(coords) > 0)
-                            cell.conflictingTroops[1].animationPath.RemoveRange(cell.conflictingTroops[1].animationPath.IndexOf(coords), cell.conflictingTroops[1].animationPath.Count - cell.conflictingTroops[1].animationPath.IndexOf(coords));
-
-                    } else if (cell.conflictingTroops[0].actionPower < cell.conflictingTroops[1].actionPower) {
-                        
-                        if (cell.conflictingTroops[0].animationPath.Count > 1 && cell.conflictingTroops[0].animationPath.IndexOf(coords) > 0)
-                            cell.conflictingTroops[0].animationPath.RemoveRange(cell.conflictingTroops[0].animationPath.IndexOf(coords), cell.conflictingTroops[0].animationPath.Count - cell.conflictingTroops[0].animationPath.IndexOf(coords));
-                        
-
-                        UnitRetreat(cell.conflictingTroops[0], cell);
-                        
-                    } else if (cell.conflictingTroops[0].actionPower > cell.conflictingTroops[1].actionPower ) {
-                        if (cell.conflictingTroops[1].animationPath.Count > 1 && cell.conflictingTroops[1].animationPath.IndexOf(coords) > 0)
-                            cell.conflictingTroops[1].animationPath.RemoveRange(cell.conflictingTroops[1].animationPath.IndexOf(coords), cell.conflictingTroops[1].animationPath.Count - cell.conflictingTroops[1].animationPath.IndexOf(coords));
-
-
-                        UnitRetreat(cell.conflictingTroops[1], cell);
-                        
-                    }
-                }
-
-                if (cell.conflictingTroops[0].currentPos == cell.transform.position && !(cell.conflictingTroops[0].animationPath.Count > 1)) {
-                    if (cell.conflictingTroops[1].animationPath.Count > 1)
-                        cell.conflictingTroops[1].animationPath.RemoveRange(cell.conflictingTroops[1].animationPath.IndexOf(coords), cell.conflictingTroops[1].animationPath.Count - cell.conflictingTroops[1].animationPath.IndexOf(coords));
-                } else if (cell.conflictingTroops[1].currentPos == cell.transform.position && !(cell.conflictingTroops[1].animationPath.Count > 1)) {
-                    if (cell.conflictingTroops[0].animationPath.Count > 1)
-                        cell.conflictingTroops[0].animationPath.RemoveRange(cell.conflictingTroops[0].animationPath.IndexOf(coords), cell.conflictingTroops[0].animationPath.Count - cell.conflictingTroops[0].animationPath.IndexOf(coords));
-                }
-                
-
-                print(cell.conflictingTroops[0].animationPath.Count);
-                print(cell.conflictingTroops[1].animationPath.Count);
-                cell.conflictingTroops.Clear();
-
-                
-            }
-            foreach (Troop troop in gameManager.troopArray) {
-                troop.newPos = hexCalculator.HexToPosition(troop.animationPath[troop.animationPath.Count - 1]);
-            }
-            conflictCell = FindConflicts();
-            if (conflictCell.Count > 0 && count < 10) {
-                count++;
-                print("Conflict function count: " + count);
-                ResolveConflicts(conflictCell);
-            } 
-        }
-
-
-        void UnitRetreat(Troop troop, Cell cell) { //oor error here
+        public void GetRetreatPath(Troop troop, Cell cell) { //Keep here since it deals with cell pathfinding
             HexCoordinates coords = hexCalculator.HexFromPosition(cell.transform.position);
             print("coords: " + coords);
             var newCoords = HexUtility.GetInRange(coords, 1);
@@ -413,29 +300,6 @@ namespace HexMapTerrain
             }
 
         }
-
-        private void HandleAction() {
-            print("handling action");
-            foreach (Troop thisTroop in gameManager.troopArray) {
-
-
-                thisTroop.reviewAnimation.Clear();
-                foreach (HexCoordinates path in thisTroop.animationPath) {
-                    thisTroop.reviewAnimation.Add(path);
-                }
-                print("Final count: " + thisTroop.animationPath.Count);
-                //thisTroop.newPos = hexCalculator.HexToPosition(thisTroop.animationPath[thisTroop.animationPath.Count - 1]);
-                thisTroop.animationPath.RemoveRange(0, 1);
-                thisTroop.ActionMove();
-                thisTroop.actionPower = thisTroop.basePower;
-                thisTroop.supportingTroop = null;
-                thisTroop.attackedByTroop = null;
-                thisTroop.supportedByTroops.Clear();
-                thisTroop.currentPos = thisTroop.newPos;
-
-            }
-        }
-
 
     }
 

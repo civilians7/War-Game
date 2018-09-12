@@ -7,22 +7,20 @@ using HexMapTerrain;
 
 public class GameManager : MonoBehaviour {
 
-    public int turnNum = 0;
-    public int turnsPerSeason = 1; //this is fine
+    public int turnNum = 0; //keep
+    public int turnsPerSeason = 1; //keep
     public string startingSeason = "Winter"; //eventually refactor to seperate season class
-    public Troop[] troopArray;
+    public Troop[] troopArray; //keep
     private TurnDisplay turnDisplay;
     private SeasonDisplay seasonDisplay;
     private HexControls hexControls;
-    private PathFinder pathFinder;
-    private int turnInSeason = 1; 
+    private int turnInSeason = 1; //moving to seperate season class
 
 	// Use this for initialization
 	void Start () {
         turnDisplay = FindObjectOfType<TurnDisplay>();
         seasonDisplay = FindObjectOfType<SeasonDisplay>();
         hexControls = FindObjectOfType<HexControls>();
-        pathFinder = FindObjectOfType<PathFinder>();
 	}
 
     void Update() {
@@ -71,8 +69,12 @@ public class GameManager : MonoBehaviour {
         hexControls.planningMode = true;
     }
 
-
-   
-
-
+    public void ActionTurn() { // Refactor to GameManager since it deals with game functioning elements
+        hexControls.FindConflicts();
+        foreach (Troop troop in troopArray) {
+            //Call one and it will call the other
+            troop.CutSupport();
+            troop.ResolveConflicts();
+        }
+    }
 }
