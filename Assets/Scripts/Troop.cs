@@ -17,8 +17,11 @@ public class Troop : MonoBehaviour {
     public Vector3 newPos;
     public CellColor color = CellColor.Blue;
     public Vector3 direction = new Vector3(0,0,0);
+    public bool movingRight;
+    public bool isMoving;
 
     public List<HexCoordinates> animationPath;
+    public List<HexCoordinates> reviewAnimation;
 
     public List<Troop> supportedByTroops = new List<Troop>(); //privatize both of these
     public Troop supportingTroop;
@@ -27,6 +30,8 @@ public class Troop : MonoBehaviour {
     public Troop attackingTroop;
 
     public HexCoordinates coords;
+    public List<Cell> conflictingCells = new List<Cell>();
+    public List<Troop> conflictingTroops = new List<Troop>();
 
     private HexControls hexControls;
     private GameManager gameManager;
@@ -52,10 +57,9 @@ public class Troop : MonoBehaviour {
     }
     void Update() {
         coords = hexCalculator.HexFromPosition(transform.position);
-        if (animationPath.Count > 0 && gameManager.turnNum == 0) {
+        if (animationPath.Count > 0) {
             transformPoint = (transform.position.x * direction.x);
             transform.Translate(direction);
-
 
             if (firstPass) {
                 moving = newPosPoint > transformPoint;
@@ -67,6 +71,7 @@ public class Troop : MonoBehaviour {
                     moveCounter++;
                     ActionMove();
                 } else {
+                    moveCounter = 0;
                     animationPath.Clear();
                     transform.position = newPos;
                     hexControls.TroopMoved(this);
@@ -78,6 +83,7 @@ public class Troop : MonoBehaviour {
 
     public void ActionMove() {
         if (!(animationPath.Count > 0)) {
+            moveCounter = 0;
             hexControls.TroopMoved(this);
         } else {
             point = hexCalculator.HexToPosition(animationPath[moveCounter]);
@@ -132,7 +138,6 @@ public class Troop : MonoBehaviour {
     }
 
     public void DestroyTroop() {
-        //GetComponentInParent<Cell>().Color = CellColor.White;
         Destroy(gameObject);
     }
 
@@ -143,6 +148,29 @@ public class Troop : MonoBehaviour {
             hexControls.SelectTroop(this);
         }
     }
+
+     void CutSupport(List<Cell> conflictCell) {
+            foreach (Cell cell in conflictCell) {
+                foreach (Troop troop in cell.conflictingTroops) {
+                    if (troop.supportingTroop) {
+                        troop.supportingTroop.supportedByTroops.Remove(troop);
+                        troop.supportingTroop.actionPower -= troop.basePower;
+                        troop.supportingTroop = null;
+                    }
+                }
+            }
+        }
+
+    public void ResolveConflicts() {
+        if (conflictingCells.Count == 0) { return; }
+
+        foreach (Cell cell in conflictingCells) {
+
+        }
+
+
+    }
+
 
 }
 
