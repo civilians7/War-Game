@@ -27,7 +27,7 @@ namespace HexMapTerrain
         private CellColor player;
         private GameManager gameManager;
         public Troop selectedTroop;
-        private PlayBack playBack;
+        private PlayBack playBack; //not used
 
 
         private void Start() {
@@ -85,23 +85,13 @@ namespace HexMapTerrain
 
         private void Move(HexCoordinates coords) {
             Troop thisTroop = cells[selectedCoords].GetComponentInChildren<Troop>();
-            if (thisTroop.attackingTroop) {
-                thisTroop.attackingTroop.attackedByTroop = null;
-                thisTroop.attackingTroop = null;
-            }
             foreach (Troop troop in gameManager.troopArray) {
 
                 if (cells[coords].transform.position == troop.transform.position && troop.color == thisTroop.color) {
                     troop.Support(thisTroop);
                     DeselectCell();
                     return;
-                } else if (cells[coords].transform.position == troop.transform.position && troop.color != thisTroop.color) {
-                    if (!troop.attackedByTroop) {
-                        troop.attackedByTroop = thisTroop;
-                        thisTroop.attackingTroop = troop;
-                    }
-
-                }
+                } 
             }
 
             thisTroop.Move();
@@ -217,31 +207,39 @@ namespace HexMapTerrain
             return 1;
         }
 
-        public void FindConflicts() { //Keep here since it returns Cells
-            FindTroopPaths();
-            List<Cell> conflictCells = new List<Cell>();
-            foreach (Troop thisTroop in gameManager.troopArray) {
-                thisTroop.conflictingCells.Clear();
-                thisTroop.conflictingTroops.Clear();
-                HexDirection dir;
-                if (thisTroop.animationPath.Count > 1) {
-                    thisTroop.isMoving = true;
-                    dir = HexUtility.NeighbourToDirection(thisTroop.animationPath[0],thisTroop.animationPath[1]);
-                    thisTroop.movingRight = dir == HexDirection.NE || dir == HexDirection.E || dir == HexDirection.SE;
-                } else {
-                    thisTroop.isMoving = false;
-                }
-                foreach (Troop thatTroop in gameManager.troopArray) {
-                    if (thisTroop != thatTroop) {
-                        foreach (HexCoordinates thisPath in thisTroop.animationPath) {
-                            foreach (HexCoordinates thatPath in thatTroop.animationPath) {
-                                if ((thisTroop.transform.position == thatTroop.transform.position || thisPath == thatPath) && !(conflictCells.Contains(cells[thisPath]))) {
-                                    if (!thisTroop.isMoving || thisTroop.movingRight != thatTroop.movingRight) {
-                                        conflictCells.Add(cells[thisPath]);
-                                        thisTroop.conflictingTroops.Add(thatTroop);
-                                        thisTroop.conflictingCells.Add(cells[thisPath]);
-                                    }
-                                }
+        public void FindPath(Troop troop) { // Keep here because it deals with Cell Pathfinding
+            troop.coordPath.Clear();
+            troop.coordPath = pathFinder.FindPath(troop.currentPos, troop.newPos);
+            if (cells[hexCalculator.HexFromPosition(troop.newPos)].GetComponentInChildren<Troop>() && troop != cells[hexCalculator.HexFromPosition(troop.newPos)].GetComponentInChildren<Troop>()) {
+                troop.coordPath.Add(hexCalculator.HexFromPosition(troop.newPos));
+            }
+            troop.coordPath.Insert(0, hexCalculator.HexFromPosition(troop.currentPos));
+
+            foreach (HexCoordinates hexCoord in troop.coordPath) {
+                troop.cellPath.Add(cells[hexCoord]);
+            }
+
+        }
+
+        public void FindConflicts(Troop thisTroop) {
+            //if (thisTroop.conflictingCells.Count > 0) { Debug.Log("Conflicting Cells not clear: " + thisTroop.conflictingCells.Count); }
+            //HexDirection dir;
+            //if (thisTroop.coordPath.Count > 1) {
+            //    thisTroop.isMoving = true;
+             //   dir = HexUtility.NeighbourToDirection(thisTroop.coordPath[0], thisTroop.coordPath[1]);
+             //   thisTroop.movingRight = dir == HexDirection.NE || dir == HexDirection.E || dir == HexDirection.SE;
+            //} else {
+            //    thisTroop.isMoving = false;
+            //}
+            foreach (Troop thatTroop in gameManager.troopArray) {
+                if (thisTroop != thatTroop) {
+                    foreach (HexCoordinates thisPath in thisTroop.coordPath) {
+                        foreach (HexCoordinates thatPath in thatTroop.coordPath) {
+                            if ((thisTroop.transform.position == thatTroop.transform.position || thisPath == thatPath)) {
+                                //if (!thisTroop.isMoving || thisTroop.movingRight != thatTroop.movingRight) {
+                                    thisTroop.conflictingCells.Add(cells[thisPath]);
+                                    thisTroop.conflictingTroops.Add(thatTroop);
+                                //}
                             }
                         }
                     }
@@ -249,20 +247,7 @@ namespace HexMapTerrain
             }
         }
 
-        private void FindTroopPaths() { // Keep here because it deals with Cell Pathfinding
-            
-            foreach (Troop thisTroop in gameManager.troopArray) {
-                thisTroop.animationPath.Clear();
-                thisTroop.animationPath = pathFinder.FindPath(thisTroop.currentPos, thisTroop.newPos);
-                if (cells[hexCalculator.HexFromPosition(thisTroop.newPos)].GetComponentInChildren<Troop>() && thisTroop != cells[hexCalculator.HexFromPosition(thisTroop.newPos)].GetComponentInChildren<Troop>()) {
-                    thisTroop.animationPath.Add(hexCalculator.HexFromPosition(thisTroop.newPos));
-                }
-                thisTroop.animationPath.Insert(0, hexCalculator.HexFromPosition(thisTroop.currentPos));
-            }
-        }
-
-
-        public void GetRetreatPath(Troop troop, Cell cell) { //Keep here since it deals with cell pathfinding
+        public Cell GetRetreatPath(Troop troop, Cell cell) { //Keep here since it deals with cell pathfinding
             HexCoordinates coords = hexCalculator.HexFromPosition(cell.transform.position);
             print("coords: " + coords);
             var newCoords = HexUtility.GetInRange(coords, 1);
@@ -285,22 +270,32 @@ namespace HexMapTerrain
             }
             if (retreatPos.ContainsKey(1)) {
                 troop.newPos = retreatPos[1];
-                troop.animationPath.Add(hexCalculator.HexFromPosition(retreatPos[1]));
+                return(cells[hexCalculator.HexFromPosition(retreatPos[1])]);
             } else if (retreatPos.ContainsKey(2)) {
                 troop.newPos = retreatPos[2];
-                troop.animationPath.Add(hexCalculator.HexFromPosition(retreatPos[2]));
+                return(cells[hexCalculator.HexFromPosition(retreatPos[2])]);;
             } else if (retreatPos.ContainsKey(3)) {
                 troop.newPos = retreatPos[3];
-                troop.animationPath.Add(hexCalculator.HexFromPosition(retreatPos[3]));
+                return(cells[hexCalculator.HexFromPosition(retreatPos[3])]);
             } else if (retreatPos.ContainsKey(4)) {
                 troop.newPos = retreatPos[4];
-                troop.animationPath.Add(hexCalculator.HexFromPosition(retreatPos[4]));
+                return(cells[hexCalculator.HexFromPosition(retreatPos[4])]);
             } else {
-                troop.DestroyTroop();
+                return (cell);
             }
 
         }
 
-    }
+        public void SetPath(Troop troop, List<Cell> path) {
+            troop.coordPath.Clear();
+            troop.cellPath.Clear();
+            foreach (Cell cell in path) {
+                HexCoordinates hexCoord = hexCalculator.HexFromPosition(cell.transform.position);
+                troop.coordPath.Add(hexCoord);
+                troop.cellPath.Add(cell);
+            }
+        }
 
+
+    }
 }

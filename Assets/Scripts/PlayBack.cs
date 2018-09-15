@@ -13,7 +13,7 @@ public class PlayBack : MonoBehaviour {
     public void Review() {
         foreach (Troop troop in gameManager.troopArray) {
             foreach (HexCoordinates path in troop.reviewAnimation) {
-                troop.animationPath.Add(path);
+                troop.coordPath.Add(path);
             }
             troop.ActionMove();
         }

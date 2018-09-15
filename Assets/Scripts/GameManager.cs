@@ -37,10 +37,26 @@ public class GameManager : MonoBehaviour {
         }
 
         if (turnNum == 0) {
+            bool conflictSolved = false;
             turnDisplay.SetTurnDisplay("");
             hexControls.ChangePlayer(CellColor.White);
             seasonDisplay.SeasonCounter();
-            hexControls.ActionTurn();
+            int i = 0;
+            do {
+                foreach (Troop troop in troopArray) {
+                    if (i == 0) {
+                        hexControls.FindPath(troop);
+                    }
+                }
+                foreach (Troop troop in troopArray) {
+                    conflictSolved = troop.ActionTurn();
+                }
+                i++;
+                print("loop number: " + i);
+            } while (conflictSolved && i < 10);
+            foreach (Troop troop in troopArray) {
+                troop.HandleAction();
+            }
         }else if (turnNum == 1) {
             turnDisplay.SetTurnDisplay("Player One");
             hexControls.ChangePlayer(CellColor.Blue);
@@ -67,14 +83,5 @@ public class GameManager : MonoBehaviour {
             }
         }
         hexControls.planningMode = true;
-    }
-
-    public void ActionTurn() { // Refactor to GameManager since it deals with game functioning elements
-        hexControls.FindConflicts();
-        foreach (Troop troop in troopArray) {
-            //Call one and it will call the other
-            troop.CutSupport();
-            troop.ResolveConflicts();
-        }
     }
 }
