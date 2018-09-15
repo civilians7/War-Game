@@ -172,11 +172,8 @@ namespace HexMapTerrain
                 troop.GetComponent<LineRenderer>().SetPosition(0, new Vector3(0, 0, 0));
                 troop.GetComponent<LineRenderer>().SetPosition(1, new Vector3(0, 0, 0));
 
-                if (troop.supportingTroop) {
-                    troop.supportingTroop.supportedByTroops.Remove(troop);
-                    troop.supportingTroop.actionPower -= troop.basePower;
-                    troop.supportingTroop = null;
-                }
+                troop.CutSupport();
+
             }
             //Highlight all possible moves
             foreach (HexCoordinates move in possibleMoves) {
@@ -222,24 +219,13 @@ namespace HexMapTerrain
         }
 
         public void FindConflicts(Troop thisTroop) {
-            //if (thisTroop.conflictingCells.Count > 0) { Debug.Log("Conflicting Cells not clear: " + thisTroop.conflictingCells.Count); }
-            //HexDirection dir;
-            //if (thisTroop.coordPath.Count > 1) {
-            //    thisTroop.isMoving = true;
-             //   dir = HexUtility.NeighbourToDirection(thisTroop.coordPath[0], thisTroop.coordPath[1]);
-             //   thisTroop.movingRight = dir == HexDirection.NE || dir == HexDirection.E || dir == HexDirection.SE;
-            //} else {
-            //    thisTroop.isMoving = false;
-            //}
             foreach (Troop thatTroop in gameManager.troopArray) {
                 if (thisTroop != thatTroop) {
                     foreach (HexCoordinates thisPath in thisTroop.coordPath) {
                         foreach (HexCoordinates thatPath in thatTroop.coordPath) {
                             if ((thisTroop.transform.position == thatTroop.transform.position || thisPath == thatPath)) {
-                                //if (!thisTroop.isMoving || thisTroop.movingRight != thatTroop.movingRight) {
                                     thisTroop.conflictingCells.Add(cells[thisPath]);
                                     thisTroop.conflictingTroops.Add(thatTroop);
-                                //}
                             }
                         }
                     }

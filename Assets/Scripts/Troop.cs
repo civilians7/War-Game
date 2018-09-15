@@ -13,16 +13,15 @@ public class Troop : MonoBehaviour {
     //game variables
     public int movement; //keep public
     public int basePower; //keep public
-    public int actionPower; //make private
     public float attackDistance; //keep public
+
+    private int actionPower; //make private
 
     //location and movement
     public Vector3 currentPos;
     public Vector3 newPos;
     public CellColor color = CellColor.Blue;
     public Vector3 direction = new Vector3(0,0,0);
-    public bool movingRight;
-    public bool isMoving;
 
     //Support
     public List<Troop> supportedByTroops = new List<Troop>(); //privatize both of these
@@ -158,12 +157,14 @@ public class Troop : MonoBehaviour {
 
     public bool ActionTurn() {
         hexControls.FindConflicts(this);
-        CutSupport();
+        if (conflictingCells.Count > 0) {
+            CutSupport();
+        }
         return ResolveConflicts();
     }
 
     public void CutSupport() { //Move to Troop since it deals with troop properties
-        if (supportingTroop && conflictingCells.Count > 0) {
+        if (supportingTroop) {
             supportingTroop.supportedByTroops.Remove(this);
             supportingTroop.actionPower -= basePower;
             supportingTroop = null;
